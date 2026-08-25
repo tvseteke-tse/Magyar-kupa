@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Csapat Teke (4 fő) - Adminisztráció</title>
+<style>
+    body { font-family: sans-serif; background: #121212; color: white; padding: 15px; margin: 0; }
+    .header-panel { margin-bottom: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .header-panel input.title-input {
+        font-size: 1.4rem; padding: 8px 12px; width: 80%; max-width: 500px;
+        background: #2a2a2a; border: 2px solid #3fb950; color: #ffff00;
+        font-weight: bold; border-radius: 6px; text-align: center;
+    }
+    .teams-inputs { display: flex; gap: 15px; width: 100%; max-width: 700px; }
+    .teams-inputs input { font-size: 1.1rem; padding: 6px; flex: 1; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px; text-align: center; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+    .card { background: #1e1e1e; padding: 10px; border-radius: 6px; border: 1px solid #333; }
+    .card h3 { margin: 0 0 8px 0; font-size: 1rem; color: #3fb950; }
+    .row { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+    input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 6px; border-radius: 4px; }
+    input[type="text"] { flex: 1; }
+    input[type="number"] { width: 42px; text-align: center; }
+</style>
+
+<!-- Firebase SDK-k -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="header-panel">
+    <input type="text" id="tournamentTitle" class="title-input" value="Bajnoki Mérkőzés (4 fő)" placeholder="Bajnokság / Mérkőzés Neve" oninput="sendData()">
+    <div class="teams-inputs">
+        <input type="text" id="t1" value="Hazai Csapat" placeholder="Hazai Csapat" oninput="sendData()">
+        <input type="text" id="t2" value="Vendég Csapat" placeholder="Vendég Csapat" oninput="sendData()">
+    </div>
+</div>
+
+<div class="grid" id="pairs"></div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "aizasyd8o7xyctxtjlqcm8z-29xtbopbxrybjom",
+    authDomain: "teke-eredmenyek.firebaseapp.com",
+    databaseURL: "https://teke-eredmenyek-default-rtdb.firebaseio.com",
+    projectId: "teke-eredmenyek",
+    storageBucket: "teke-eredmenyek.appspot.com"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+
+const playersCount = 4;
+
+function init() {
+    const container = document.getElementById('pairs');
+    container.innerHTML = '';
+    for (let i = 0; i < playersCount; i++) {
+        container.innerHTML += `
+            <div class="card">
+                <h3>Pár ${i + 1}</h3>
+                <div class="row">
+                    <input type="text" class="p1-name" placeholder="Hazai játékos" oninput="sendData()">
+                    ${[0,1,2,3].map(s => `<input type="number" class="p1-s${s}" placeholder="S${s+1}" oninput="sendData()">`).join('')}
+                </div>
+                <div class="row">
+                    <input type="text" class="p2-name" placeholder="Vendég játékos" oninput="sendData()">
+                    ${[0,1,2,3].map(s => `<input type="number" class="p2-s${s}" placeholder="S${s+1}" oninput="sendData()">`).join('')}
+                </div>
+            </div>
+        `;
+    }
+    sendData();
+}
+
+function sendData() {
+    const payload = {
+        title: document.getElementById('tournamentTitle').value || 'Bajnoki Mérkőzés (4 fő)',
+        team1: document.getElementById('t1').value || 'Hazai',
+        team2: document.getElementById('t2').value || 'Vendég',
+        pairs: []
+    };
+
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        payload.pairs.push({
+            p1Name: card.querySelector('.p1-name').value,
+            p1Sets: [0,1,2,3].map(s => parseInt(card.querySelector(`.p1-s${s}`).value) || 0),
+            p2Name: card.querySelector('.p2-name').value,
+            p2Sets: [0,1,2,3].map(s => parseInt(card.querySelector(`.p2-s${s}`).value) || 0)
+        });
+    });
+
+    db.ref('bajnoki4_bowling').set(payload);
+}
+
+init();
+</script>
+</body>
+</html>
